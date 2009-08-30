@@ -70,6 +70,40 @@ sub set_template {
 
 sub set_data {
     my ( $self, $c ) = @_;
+
+    $c->stash->{'ENV'} = {
+        %ENV,
+        'HTTP_HOST'            => $c->req->uri->host_port,
+        'HTTP_REFERER'         => $c->req->referer || undef,
+        'HTTP_ACCEPT'          => $c->req->headers->header('Accept') || undef,
+        'HTTP_ACCEPT_LANGUAGE' => $c->req->headers->header('Accept-Language') || undef,
+        'HTTP_ACCEPT_ENCODING' => $c->req->headers->header('Accept-Encoding') || undef,
+        'HTTP_USER_AGENT'      => $c->req->user_agent || undef,
+        'SERVER_PROTOCOL'      => $c->req->protocol,
+        'PATH_INFO'            => $c->req->path_info,
+        'QUERY_STRING'         => $c->req->uri->query,
+        'REQUEST_METHOD'       => uc $c->req->method,
+        'REQUEST_URI'          => substr($c->req->uri, length($c->req->base) - 1),
+        'REQUEST_BASE'         => substr($c->req->base, 0, - 1),
+        'REMOTE_ADDR'          => $c->req->address,
+    };
+
+    $c->stash->{'action'} = {
+        'namespace' => $c->action->namespace,
+        'reverse'   => $c->action->reverse,
+        'reverse_'  => $c->action->reverse,
+        'name'      => $c->action->name,
+    };
+    $c->stash->{'action'}{'reverse_'} =~ s{/}{_}go;
+
+    my $offset = defined $c->stash->{'TZ_OFFSET'} ? $c->stash->{'TZ_OFFSET'} : 0;
+    @{$c->stash->{'time'}}{qw/
+        year month day hour min sec day_abbr day_name
+        date iso8601 time epoch rfc822 offset tz
+    /} = split /[;]/, POSIX::strftime(
+        "%Y;%m;%d;%H;%M;%S;%a;%A;%Y/%m/%d;%F;%T;%s;%a, %d %b %Y %H:%M:%S %z;%z;%Z",
+    gmtime( time + $offset ));
+
     $self->data( $c->stash );
 }
 
