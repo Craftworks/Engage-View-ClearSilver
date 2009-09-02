@@ -42,6 +42,7 @@ sub process {
     my $body = $self->render;
     Catalyst::Exception->throw( message => qq/Coudn't render template/ )
         unless defined $body;
+    $self->filter_body( $c, \$body );
     $c->response->body( $body );
     return 1;
 }
@@ -104,7 +105,19 @@ sub set_data {
         "%Y;%m;%d;%H;%M;%S;%a;%A;%Y/%m/%d;%F;%T;%s;%a, %d %b %Y %H:%M:%S %z;%z;%Z",
     gmtime( time + $offset ));
 
+    $c->stash->{'param'} = $c->req->params;
+
     $self->data( $c->stash );
+}
+
+sub filter_body {
+    my ( $self, $c, $body ) = @_;
+    require HTML::FillInForm;
+    utf8::decode( $$body );
+    $$body = HTML::FillInForm->fill( $body,
+        [ $c->req->params, $c->stash ],
+        fill_password => 0,
+    );
 }
 
 =head1 AUTHOR
