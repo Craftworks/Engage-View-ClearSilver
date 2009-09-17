@@ -5,17 +5,22 @@ all_from 'lib/Engage/View/ClearSilver.pm';
 author   q{Craftworks <craftwork at cpan org>};
 license  'perl';
 
-build_requires('Test::More');
-build_requires('Test::UseAllModules');
-build_requires('Test::Exception');
+build_requires 'Test::More';
+build_requires 'Test::UseAllModules';
+build_requires 'Test::Exception';
 
-requires('Moose');
-requires('Moose::Util::TypeConstraints');
-requires('ClearSilver');
-requires('Data::ClearSilver::HDF');
-requires('IPC::Cmd');
+requires 'Moose';
+requires 'Moose::Util::TypeConstraints';
+requires 'ClearSilver';
+requires 'Data::ClearSilver::HDF';
+requires 'IPC::Cmd';
+requires 'File::Temp';
+
+requires_external_bin 'cstest';
+
+author_tests 'xt';
 
 auto_install;
+auto_manifest;
 
 WriteAll;
-

@@ -25,11 +25,12 @@ use Moose;
 use Moose::Util::TypeConstraints;
 use ClearSilver;
 use Data::ClearSilver::HDF;
+use File::Temp;
 use IPC::Cmd;
 with 'Engage::Utils';
 with 'Engage::Log';
 
-our $VERSION = '0.01';
+our $VERSION = '0.001';
 
 subtype 'PathFile'
     => as 'Str'
@@ -41,9 +42,10 @@ has 'cstest' => (
     isa => 'Str',
     default => sub {
         my $self = shift;
-        my $cstest = IPC::Cmd::can_run('cstest');
-        return $cstest if $cstest;
-        $self->log->warn('cstest is not installed');
+        if ( my $cstest = IPC::Cmd::can_run('cstest') ) {
+            return $cstest;
+        }
+        Engage::Exception->throw(q/cstest is not installed/);
     }
 );
 
@@ -103,18 +105,14 @@ sub render {
         return;
     }
 
+    # Check loadpaths
     my ($loadpath) = grep { defined && -f "$_/$template" } @{ $self->loadpaths };
-    if ( !defined $loadpath ) {
-        $self->log->error(qq/Couldn't find template "$template" in loadpaths /
-            . join ':', grep defined, @{ $self->loadpaths });
-        return;
-    }
+    Engage::Exception->throw(qq/Couldn't find template "$template" in loadpaths /
+        . join ':', grep defined, @{ $self->loadpaths }) unless defined $loadpath;
 
+    # Check file
     my $file = "$loadpath/$template";
-    if ( !-r $file ) {
-        $self->log->error(qq/Couldn't read template $file/);
-        return;
-    }
+    Engage::Exception->throw(qq/Couldn't read template $file/) unless -r $file;
 
     $self->log->debug( sprintf $self->no_wrapper
         ? 'Rendering template "%s"'
@@ -125,11 +123,7 @@ sub render {
     my $hdf = Data::ClearSilver::HDF->hdf({
         content => $self->template, %{ $self->data },
     });
-
-    if (!$hdf) {
-        $self->log->error(qq/Couldn't create HDF Dataset/);
-        return;
-    }
+    Engage::Exception->throw(qq/Couldn't create HDF Dataset/) unless $hdf;
 
     my $i = 0;
     for (@{ $self->loadpaths }) {
@@ -139,12 +133,13 @@ sub render {
 
     my $cs = ClearSilver::CS->new( $hdf );
 
+    # Parse and get error message
     if (!$cs->parseFile( $template )) {
         $self->log->error(qq/Couldn't render template "$template"/);
         return if !$self->cstest;
 
         my $buffer = '';
-        my $hdf_file = "/tmp/hdf.$$." . time;
+        my $hdf_file = File::Temp->new->filename;
         my @run = (
             command => [ $self->cstest, '-v', $hdf_file, $file ],
             buffer  => \$buffer,
@@ -153,11 +148,7 @@ sub render {
 
         $hdf->writeFile($hdf_file);
         IPC::Cmd::run( @run );
-        unlink $hdf_file;
-
-        $self->log->error(qq/$buffer/);
-
-        return;
+        Engage::Exception->throw( $buffer );
     }
 
     return $cs->render;
