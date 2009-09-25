@@ -36,9 +36,9 @@ sub process {
     my ( $self, $c ) = @_;
 
     $self->no_wrapper(1) if $c->stash->{'no_wrapper'};
+    $self->set_data( $c );
     $self->set_loadpaths( $c );
     $self->set_template( $c );
-    $self->set_data( $c );
     my $body = $self->render;
     Catalyst::Exception->throw( message => qq/Coudn't render template/ )
         unless defined $body;
