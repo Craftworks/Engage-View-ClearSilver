@@ -115,7 +115,7 @@ sub filter_body {
     require HTML::FillInForm;
     utf8::decode( $$body );
     $$body = HTML::FillInForm->fill( $body,
-        [ $c->req->params, $c->stash ],
+        [ $c->req->params, $c->stash, $c->stash->{'fdat'} ],
         fill_password => 0,
     );
 }
