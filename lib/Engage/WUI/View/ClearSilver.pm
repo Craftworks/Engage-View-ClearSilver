@@ -107,6 +107,12 @@ sub set_data {
 
     $c->stash->{'param'} = $c->req->params;
 
+    if ( $c->can('user_exists') && $c->user_exists ) {
+        $c->stash->{'user_exists'} = 1;
+        $c->stash->{'user'} = $c->user->get_object;
+        $c->stash->{'user'}{'id'} = $c->user->id;
+    }
+
     $self->data( $c->stash );
 }
 
