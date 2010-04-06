@@ -42,6 +42,7 @@ sub process {
     my $body = $self->render;
     Catalyst::Exception->throw( message => qq/Coudn't render template/ )
         unless defined $body;
+    $self->filter_body( $c, \$body );
     $c->response->body( $body );
     return 1;
 }
@@ -120,6 +121,16 @@ sub set_data {
     }
 
     $self->data( $stash );
+}
+
+sub filter_body {
+    my ( $self, $c, $body ) = @_;
+    require HTML::FillInForm;
+    utf8::decode( $$body );
+    $$body = HTML::FillInForm->fill( $body,
+        [ $c->req->params, $c->stash, $c->stash->{'fdat'} ],
+        fill_password => 0,
+    );
 }
 
 =head1 AUTHOR
