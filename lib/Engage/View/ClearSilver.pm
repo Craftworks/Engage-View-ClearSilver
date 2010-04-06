@@ -62,8 +62,26 @@ has 'template' => (
     },
 );
 
+has 'wrapper' => (
+    is  => 'rw',
+    isa => 'PathFile',
+    trigger => sub {
+        my ( $self, $template ) = @_;
+        $self->{'wrapper'} .= '.cs' if $template !~ /\.cs$/o;
+    },
+);
+
 has 'data' => (
     is  => 'rw',
+    isa => 'HashRef',
+    default => sub { +{} },
+);
+
+has 'no_wrapper' => (
+    is  => 'rw',
+    isa => 'Bool',
+    default => sub { shift->wrapper ? 0 : 1 },
+    lazy => 1,
 );
 
 no Moose;
@@ -78,16 +96,17 @@ __PACKAGE__->meta->make_immutable;
 
 sub render {
     my $self = shift;
-    my $template = $self->template;
+    my $template = $self->no_wrapper ? $self->template : $self->wrapper;
 
     if (!length $template) {
         $self->log->debug('No template specified for rendering');
         return;
     }
 
-    my ($loadpath) = grep { -f "$_/$template" } @{ $self->loadpaths };
+    my ($loadpath) = grep { defined && -f "$_/$template" } @{ $self->loadpaths };
     if ( !defined $loadpath ) {
-        $self->log->error(qq/Couldn't find template in loadpaths / . join ':', @{ $self->loadpaths });
+        $self->log->error(qq/Couldn't find template "$template" in loadpaths /
+            . join ':', grep defined, @{ $self->loadpaths });
         return;
     }
 
@@ -97,9 +116,15 @@ sub render {
         return;
     }
 
-    $self->log->debug(qq/Rendering template "$template"/);
+    $self->log->debug( sprintf $self->no_wrapper
+        ? 'Rendering template "%s"'
+        : 'Rendering template "%s" with wrapper "%s"',
+        $self->template, $self->wrapper
+    );
 
-    my $hdf = Data::ClearSilver::HDF->hdf( $self->data );
+    my $hdf = Data::ClearSilver::HDF->hdf({
+        content => $self->template, %{ $self->data },
+    });
 
     if (!$hdf) {
         $self->log->error(qq/Couldn't create HDF Dataset/);
