@@ -6,3 +6,6 @@ hashref:
 <?cs var:hashref.a ?>
 <?cs var:hashref.b ?>
 <?cs var:hashref.c ?>
+escape:
+<?cs var:uc(html) ?>
+ＵＴＦ８

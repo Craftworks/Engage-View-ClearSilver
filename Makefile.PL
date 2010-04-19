@@ -11,12 +11,7 @@ build_requires 'Test::Exception';
 
 requires 'Moose';
 requires 'Moose::Util::TypeConstraints';
-requires 'ClearSilver';
-requires 'Data::ClearSilver::HDF';
-requires 'IPC::Cmd';
-requires 'File::Temp';
-
-requires_external_bin 'cstest';
+requires 'Text::ClearSilver';
 
 author_tests 'xt';
 

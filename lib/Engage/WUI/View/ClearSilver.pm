@@ -20,7 +20,16 @@ Perhaps a little code snippet.
 use Moose;
 extends qw/Catalyst::View Engage::View::ClearSilver/;
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
+
+has '+cs' => (
+    default => sub {
+        Text::ClearSilver->new(
+            'VarEscapeMode' => 'html',
+            'functions' => [qw(html string)],
+        );
+    },
+);
 
 no Moose;
 
@@ -126,10 +135,9 @@ sub set_data {
 sub filter_body {
     my ( $self, $c, $body ) = @_;
     require HTML::FillInForm;
-    utf8::decode( $$body );
     $$body = HTML::FillInForm->fill( $body,
         [ $c->req->params, $c->stash, $c->stash->{'fdat'} ],
-        fill_password => 0,
+        'fill_password' => 0,
     );
 }
 
