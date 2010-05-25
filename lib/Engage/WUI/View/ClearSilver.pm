@@ -18,6 +18,7 @@ Perhaps a little code snippet.
 =cut
 
 use Moose;
+use Encode;
 extends qw/Catalyst::View Engage::View::ClearSilver/;
 
 our $VERSION = '0.02';
@@ -52,7 +53,8 @@ sub process {
     Catalyst::Exception->throw( message => qq/Coudn't render template/ )
         unless defined $body;
     $self->filter_body( $c, \$body );
-    $c->response->header('Content-Length' => length $body);
+    $c->response->header('Accept-Ranges' => 'bytes');
+    $c->response->header('Content-Length' => length Encode::encode_utf8($body));
     $c->response->body( $body );
     return 1;
 }
