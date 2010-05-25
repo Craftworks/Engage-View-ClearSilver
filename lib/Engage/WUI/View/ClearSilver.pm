@@ -52,6 +52,7 @@ sub process {
     Catalyst::Exception->throw( message => qq/Coudn't render template/ )
         unless defined $body;
     $self->filter_body( $c, \$body );
+    $c->response->header('Content-Length' => length $body);
     $c->response->body( $body );
     return 1;
 }
